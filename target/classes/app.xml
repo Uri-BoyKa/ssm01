@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans default-autowire="byName"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+	<!-- 
+	ssm : Spring4.3 + springMVC4.3 + mybaits3.2.3
+	ssh : spring + struts2 + hibernate
+	
+	ssm环境搭建:
+	1. spring环境:
+		a.添加spring常用依赖;
+		b.准备spring配置文件:
+			先生成spring配置文件,并添加可能用到的schame;
+			这里为spring应用注解做准备,添加组件扫描范围;
+		c.web.xml文件中,配置spring监听器和上下文参数:
+			监听器监听服务器启动,当服务器启动的时候,马上初始化spring容器,为将来处理用户请求做准备;
+			上下文参数,用来指定spring配置文件的路径和名字
+		
+	2.spirngMVC环境:
+		a.添加springMVC依赖
+		b.springMVC配置文件:
+			生成springMVC的配置文件,这里直接利用spring配置文件就可以了
+			配置mvc注解驱动;
+			配置视图处理器;
+		c.web.xml文件中,配置DispatcherServlet
+			此时因为MVC配置文件放到了resources目录下,所以需要在servlet中,配置一个初始化参数,用来指明mvc配置文件的路径和名字
+			
+	3.mybaits环境:
+		a.添加mybatis依赖：
+			mybatis核心依赖;
+			数据库驱动依赖;
+				这里使用的是oracle,但是通常中央仓库中无法下载oracle依赖，所以这里需要自己安装了一个oracle依赖：
+				mvn install:install-file -DgroupId=com.oracle -DartifactId=ojdbc6 -Dversion=11.2.0.4.0 -Dpackaging=jar -Dfile=ojdbc6.jar
+		b.准备mybatis的配置文件：
+			现在因为数据源应该交给spring来管理，数据库连接对象应该由spring来创建
+			通过由第三方的工具，来创建和管理我的数据源：
+			常见的数据源工具有：commons,c3p0,druid..
+			这里使用apache提供的commons数据源：
+				第一步，添加commons数据源依赖；
+				第二步，spring配置文件中，添加bean,并添加必要的连接参数;
+			app.xml文件中，配置连接工厂
+			配置连接工厂的时候，又需要添加mybatis-spring依赖；
+			准备实体映射文件，实体类，并在mybatis配置文件中引入;
+				
+	 -->
+	
+	
+	
+	<!-- 第2步 生产spring配置文件 -->
+	
+	<!-- 然后在写上需要配置的环境  2.1   自动扫描注解的bean -->
+	<context:annotation-config></context:annotation-config>
+	<context:component-scan base-package="sz.hh"></context:component-scan>
+
+	<mvc:default-servlet-handler/>
+	<!-- 生成springMVC的配置文件  4.2 -->
+	<mvc:annotation-driven></mvc:annotation-driven>
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+		<property name="prefix" value="/"></property>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<!-- 数据源
+	spring配置文件中，添加bean,并添加必要的连接参数    5.2-5.3 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" >
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"></property>
+		<property name="url" value="jdbc:oracle:thin:@localhost:1521:orcl" ></property>
+		<property name="username" value="zhangsan" ></property>
+		<property name="password" value="123" ></property>
+	</bean>
+	
+	<!-- 连接工厂  5.4   -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" >
+		<property name="dataSource" ref="dataSource" ></property>
+		<property name="configLocation" value="classpath:mybatis_config.xml" ></property>
+		<!-- <property name="mapperLocations" value="classpath:sz/hh/pojo/*.xml" ></property> -->
+		<!-- <property name="mapperLocations">
+			<array>
+				<value>classpath:xxx.xml</value>
+			</array>
+		</property> -->
+		
+		<!-- 分页插件 -->
+		<property name="plugins">
+			<array>
+				<bean class="com.github.pagehelper.PageHelper" >
+					<property name="properties">
+						<value>
+							<!-- 你使用的数据库类型 -->
+							dialect=oracle
+							reasonable=true
+						</value>
+					</property>
+				</bean>
+			</array>
+		</property>
+		
+	</bean>
+	
+	 <!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
+    <!-- 扫描接口Dao后会自动创建相应DAO的实体对象 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer" >
+    	<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" ></property>
+		<property name="basePackage" value="sz.hh.dao"></property>
+	</bean>
+	
+	<!-- 准备一个而文件上传操作对象 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" >
+		<property name="defaultEncoding" value="utf-8"></property>
+	</bean>
+	
+	<!-- 配置拦截器 -->
+	<!-- <mvc:interceptors>
+		<bean class="sz.hh.util.LoginIntercepter" ></bean>
+	</mvc:interceptors> -->
+	
+	<!-- <bean id="li" class="cn.sz.gl.util.LoginIntercepter" ></bean>
+	<mvc:interceptors>
+		<ref bean="li" />
+	</mvc:interceptors> -->
+	
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/><!-- 指定拦截的范围,**表示拦截的范围包含了目录下的内容    推荐用这种拦截配置   -->
+			<!-- <mvc:exclude-mapping path="/uc/**"/> --><!-- 上一步的拦截范围内,排除某一部分请求,不进拦截器 这里跟数组里写排除地址是一样的 -->
+			<bean class="sz.hh.util.LoginIntercepter" ></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
+	
+	<!-- 事务配置
+		两种方式：xml中配文件的方式;注解的方式 -->
+		
+	<!-- 配置文件的方式:
+			1.准备事务处理的对象
+			2.制定事务管理的规则
+			3.指定事务作用的范围
+	 -->
+	 <!-- 事务管理对象 -->
+	<!-- <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" >
+		<property name="dataSource" ref="dataSource"></property>
+	</bean> -->
+	
+	<!-- 事务管理规则 -->
+	<!-- name: 表示指定的方法名
+		 isolation : 事务的隔离级别
+		 	READ_COMOITTED : 书屋没提交,其他事务不允许读取该事务中的数据
+		 	READ_UNCOMMITTED : 事务没提交,其他事务可以读取该事务中的数据
+		 propagation : 事务的传播行为
+		 	REQUIRED : 表示如果当前已经有事务了,就直接使用当前事务;如果当前没有事务,就开启一个新的事务;
+		 	REQUIRES_NEW : 不管当前事务是否存在,都开启一个新的事务;
+		 	NOT_SUPPORTED : 不需要开启事务
+		 	
+		 read-only : 事务是否是只读事务
+		 	如果是只读事务,那么在该事务中,不允许出现增,删,改操作
+		 	
+		 no-rollback-for: 指定异常发生的时候,不回滚
+		 
+		 rollback-for : 指定异常发生的时候,就回滚
+		 
+		 timeout : 事务开启后,处理时间如果超过指定时间,就回滚
+		 ( read-only和 timeout 在不同的数据库,会有不同的失效  会挑持久化框架和数据库)
+	 -->
+	<!-- <tx:advice id="adv" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="buy*" isolation="READ_COMMITTED" propagation="REQUIRED" timeout="-1" no-rollback-for="" read-only="false" rollback-for="sz.hh.util.StoreHouseLessException"  />
+			<tx:method name="buy*" rollback-for="" />
+		</tx:attributes>
+	</tx:advice> -->
+	
+	<!-- 指定事务作用范围  -->
+	<!-- <aop:config>
+		<aop:pointcut expression="execution(* sz.hh.service.UserService.*(..))" id="us"/>
+		<aop:advisor advice-ref="adv" pointcut-ref="us" />
+	</aop:config> -->
+	
+	<!-- 注解方式实现事务 -->
+	<bean id="transactionManager"  class="org.springframework.jdbc.datasource.DataSourceTransactionManager" >
+		<property name="dataSource" ref="dataSource" ></property>
+	</bean>
+	
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+
+</beans>

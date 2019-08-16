@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <welcome-file-list>
+    <welcome-file>login.jsp</welcome-file>
+  </welcome-file-list>
+  
+  <!-- 添加数据库后防止乱码 -->
+  <filter>
+  	<filter-name>encodingfilter</filter-name>
+  	<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+  	<init-param>
+  		<param-name>encoding</param-name>
+  		<param-value>utf-8</param-value>
+  	</init-param>
+  	<init-param>
+  		<param-name>forceEncoding</param-name>
+  		<param-value>true</param-value>
+  	</init-param>
+  </filter>
+  
+  <filter-mapping>
+  	<filter-name>encodingfilter</filter-name>
+  	<url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+  
+  <!-- spring配置文件名字是自定义的 所以得告诉他,这时就需要借助下面这个上下文参数来进行配置  3.2 
+  	<param-value>/WEB-INF/classes/app.xml</param-value> 这是一种写法
+  	<param-value>classpath:app.xml</param-value> 这是另一种写法
+  	通过上下文参数,找到spring配置文件的路径和名字
+  -->
+  <context-param>
+  	<param-name>contextConfigLocation</param-name>
+  	 <!-- <param-value>/WEB-INF/classes/app.xml</param-value> -->
+	<param-value>classpath:app.xml</param-value>
+  </context-param>
+  
+  <!-- 第3步配置监听器(这个就是为了准备容器,在项目启动的时候自动创建)  -->
+  <!-- 配置服务器范围监听器,当服务器启动的时候,就初始化spring容器  3.1 -->
+  <listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+	
+	<!-- springMVC web xml文件就配置好了,有点不一样的是在resources里面而不是在WEB-INF里的所以要指明他的路径就需要加<init-param> 
+			配置springMVC web xml文件 4.3
+	-->
+	<servlet>
+		<servlet-name>dispatcherServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:app.xml</param-value>
+		</init-param>
+	</servlet>
+	
+	<servlet-mapping>
+		<servlet-name>dispatcherServlet</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+  
+</web-app>
