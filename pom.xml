@@ -7,7 +7,7 @@
   
   <!-- 自定义版本号   第4步配置MVC环境  4.1 -->
   <properties>
-  	<spring.version>4.3.10.RELEASE</spring.version>
+  	<spring.version>5.2.20.RELEASE</spring.version>
   </properties>
   
   <dependencies>
